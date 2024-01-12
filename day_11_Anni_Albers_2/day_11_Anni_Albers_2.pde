@@ -26,7 +26,7 @@ int[] fact_opts = {4, 7, 11, 18, 29, 47, 76, 123, 199};
 String fn_params; 
 
 int mov_len_ms;
-int frame_rate;
+int frame_rate = 30;
 
 color[][] clrs = new color[7][2];
 boolean movie_capture = false;
@@ -59,8 +59,8 @@ void settings() {
 }
 
 void setup() {
-  //mov_len_ms = 9*1000;
-  //frameRate(frame_rate);
+  mov_len_ms = 9*1000;
+  frameRate(frame_rate);
   // clrs[#] palette
   // clrs[#][0] background
   // clrs[#][1] foreground
