@@ -1,4 +1,4 @@
-// __ _ ___ ____ _______ ___________ __________________ ___________ _______ //<>// //<>// //<>// //<>// //<>// //<>// //<>// //<>//
+// __ _ ___ ____ _______ ___________ __________________ ___________ _______ 
 //
 //    GENUARY 2024, Day 7 #2, "Loading Animation"
 //      @sspboyd sspboyd.ca   Stephen Boyd
@@ -12,8 +12,9 @@
 
 float PHI = 1.61803399;
 float i_PHI = 0.61803399;
-int r_seed;
-float n_off, n_incr;
+int r_seed; // using the same number for both random and noise seeds
+// float n_off, n_incr;
+float n_off_orig_x, n_off_orig_y, n_off_x, n_off_y, n_off_radius;
 int window_w, window_h;
 int num_rows, num_cols;
 int num_rows_fact, num_cols_fact;
@@ -23,18 +24,20 @@ int cell_w, cell_h;
 int clr_pal;
 int[] fact_opts = {4, 7, 11, 18, 29, 47, 76, 123, 199};
 //String export_fn;
-String fn_params; 
+String fn_params;
 
-int mov_len_ms;
+int mov_len;
 int frame_rate = 30;
+int max_frames, curr_frame;
 
 color[][] clrs = new color[7][2];
 boolean movie_capture = false;
 
 void settings() {
   int target_window_w=1080;
-  int target_window_h=1920;
+  int target_window_h=1080;
   r_seed = int(random(2147483647));
+  // r_seed = 137617152;
   // r_seed = 1590494208;
   //r_seed = 1431188480;
   //r_seed =   1017447296;
@@ -45,6 +48,8 @@ void settings() {
 
   num_cols_fact = fact_opts[int(random(fact_opts.length))];
   num_rows_fact = fact_opts[int(random(fact_opts.length))];
+  // num_cols_fact = 47;
+  // num_rows_fact = 4;
   rot_fact = fact_opts[int(random(fact_opts.length))];
   num_rows = int(target_window_w/num_rows_fact);
   num_cols = int(target_window_h/num_cols_fact);
@@ -59,8 +64,10 @@ void settings() {
 }
 
 void setup() {
-  mov_len_ms = 9*1000;
+  mov_len = 9;
   frameRate(frame_rate);
+  max_frames = mov_len*frame_rate;
+  curr_frame=0;
   // clrs[#] palette
   // clrs[#][0] background
   // clrs[#][1] foreground
@@ -90,10 +97,16 @@ void setup() {
   clr_1=color(clrs[clr_pal][0]);
   clr_2=color(clrs[clr_pal][1]);
 
-  n_off = 0;
-  n_incr = -0.005;
+  // n_off = 0;
+  // n_incr = -0.005;
 
- fn_params = "r_seed_"+r_seed+"-clr_pal_"+clr_pal+"-row_f_"+num_rows_fact+"-col_f_"+num_cols_fact+"-rot_f_"+rot_fact+"";
+  n_off_x=0;
+  n_off_y=0;
+  n_off_orig_x=0;
+  n_off_orig_y=0;
+  n_off_radius=.618;
+
+  fn_params = "r_seed_"+r_seed+"-clr_pal_"+clr_pal+"-row_f_"+num_rows_fact+"-col_f_"+num_cols_fact+"-rot_f_"+rot_fact+"";
 
 
 
@@ -110,13 +123,19 @@ void draw() {
   background(clr_1);
   fill(clr_2);
 
+  float curr_radius = 1.0*(curr_frame%max_frames)/(1.0*max_frames)*TWO_PI;
+  n_off_x = n_off_orig_x + (cos(curr_radius))*n_off_radius/2;
+  n_off_y = n_off_orig_y + (sin(curr_radius))*n_off_radius/2;
+  curr_frame++;
+
   int c_pos_x, c_pos_y;
   for (int c_idx=0; c_idx<num_rows*num_cols; c_idx++) {
     c_pos_x = c_idx%num_cols*cell_w;
     c_pos_y = int(c_idx/num_cols)*cell_h;
     push();
     translate(c_pos_x+cell_w/2, c_pos_y+cell_h/2);
-    int rot_pos = int(noise(n_off+c_pos_x/123.0, n_off+c_pos_y/123.0)*rot_fact);
+    int rot_pos = int(noise(n_off_x+c_pos_x/123.0, n_off_y+c_pos_y/123.0)*rot_fact);
+    // int rot_pos = int(noise(n_off+c_pos_x/123.0, n_off+c_pos_y/123.0)*rot_fact);
     //int rot_pos = int(noise(n_off+c_pos_x/47.0,n_off+c_pos_y/47.0)*4);
     float rot = (TWO_PI/rot_fact)*rot_pos;
     rotate(rot);
@@ -124,11 +143,18 @@ void draw() {
     triangle(0, 0, cell_w, 0, 0, cell_h);
     pop();
   }
-  n_off += n_incr;
+  // n_off += n_incr;
+
 
   if (movie_capture) {
-    String saveFrame_fn ="frames_"+r_seed+"/genuary2024_day11_2-"+fn_params+"-#####.png";
-    saveFrame(saveFrame_fn);
+    if (curr_frame<max_frames) {
+      String saveFrame_fn ="frames/"+r_seed+"/genuary2024_day11_2-"+fn_params+"-#####.png";
+      saveFrame(saveFrame_fn);
+    } else {
+      movie_capture=false;
+      println("Saving Frames: "+movie_capture);
+      println(curr_frame);
+    }
   }
 }
 
@@ -141,8 +167,16 @@ void keyPressed() {
     save(export_filename);
     println("saved to: "+export_filename);
   }
+
   if (key == 'f' || key == 'F') {
-    movie_capture=(movie_capture)?false:true;
+    if (movie_capture) {
+      movie_capture=false;
+      // curr_frame=0;
+    } else {
+      movie_capture=true;
+      curr_frame=0;
+    }
     println("Saving Frames: "+movie_capture);
+    println("curr_frame: "+curr_frame);
   }
 }
